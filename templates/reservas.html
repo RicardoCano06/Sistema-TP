@@ -199,6 +199,20 @@
         </form>
       </div>
     </div>
+    <!-- Modal de confirmación para eliminar reserva -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('deleteModal')">&times;</span>
+        <h3>¿Estás seguro de que deseas eliminar esta reserva?</h3>
+        <input type="hidden" id="reservaAEliminar" />
+        <button class="action-button delete-button" onclick="eliminarReserva()">
+          Eliminar
+        </button>
+        <button class="action-button" onclick="closeModal('deleteModal')">
+          Cancelar
+        </button>
+      </div>
+    </div>
 
     <script>
       function openAddModal() {

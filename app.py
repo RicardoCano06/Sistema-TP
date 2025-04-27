@@ -615,20 +615,30 @@ def editar_servicio():
     precio = request.form['precio']
     conn = sqlite3.connect('eventos.db')
     cursor = conn.cursor()
-    cursor.execute('UPDATE Servicios SET Nombre = ?, Precio = ? WHERE idServicio = ?', (nombre, precio, id_servicio))
-    conn.commit()
-    conn.close()
-    return redirect('/servicios')
+    try:
+        cursor.execute('UPDATE Servicios SET Nombre = ?, Precio = ? WHERE idServicio = ?', (nombre, precio, id_servicio))
+        conn.commit()
+        mensaje = "Servicio actualizado correctamente."
+    except sqlite3.Error as e:
+        mensaje = f"Error al actualizar servicio: {e}"
+    finally:
+        conn.close()
+    return f"<script>alert('{mensaje}'); window.location.href='/servicios';</script>"
 
 @app.route('/eliminar_servicio', methods=['POST'])
 def eliminar_servicio():
     id_servicio = request.form['id_servicio']
     conn = sqlite3.connect('eventos.db')
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM Servicios WHERE idServicio = ?', (id_servicio,))
-    conn.commit()
-    conn.close()
-    return redirect('/servicios')
+    try:
+        cursor.execute('DELETE FROM Servicios WHERE idServicio = ?', (id_servicio,))
+        conn.commit()
+        mensaje = "Servicio eliminado correctamente."
+    except sqlite3.Error as e:
+        mensaje = f"Error al eliminar servicio: {e}"
+    finally:
+        conn.close()
+    return f"<script>alert('{mensaje}'); window.location.href='/servicios';</script>"
 
 
 @app.route('/facturas')
