@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Reservas - The Grand Hall</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <nav class="navbar">
+        <h2>The Grand Hall</h2>
+        <div class="nav-links">
+          <a
+            href="{% if role == 'Administrador' %}/admin_dashboard{% elif role == 'Empleado' %}/empleado_dashboard{% endif %}"
+            >Inicio</a
+          >
+          <a href="/logout">Cerrar Sesión</a>
+        </div>
+      </nav>
+      <div class="content">
+        <h2>Gestión de Reservas</h2>
+        <div class="gestion-buttons">
+          <button class="action-button" onclick="openAddModal()">
+            Agregar Reserva
+          </button>
+          <button class="action-button" onclick="openViewModal()">
+            Ver Reservas
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para agregar reserva -->
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('addModal')">&times;</span>
+        <h3>Agregar Reserva</h3>
+        <form id="reservaForm">
+          <label for="fechaReserva">Fecha de Reserva:</label>
+          <input type="date" id="fechaReserva" name="fecha_reserva" required />
+
+          <label for="cedulaCliente">Buscar Cliente por Cédula:</label>
+          <div style="display: flex; gap: 10px">
+            <input
+              type="text"
+              id="cedulaCliente"
+              placeholder="Ingrese la cédula..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="action-button"
+              onclick="buscarCliente()"
+            >
+              Buscar
+            </button>
+          </div>
+          <input type="hidden" id="idCliente" name="id_cliente" />
+          <p
+            id="clienteInfo"
+            style="margin-top: 10px; color: var(--color-primary)"
+          ></p>
+
+          <label for="idSalon">Salón:</label>
+          <select id="idSalon" name="id_salon" required>
+            {% for salon in salones %}
+            <option value="{{ salon[0] }}">{{ salon[1] }}</option>
+            {% endfor %}
+          </select>
+
+          <label for="servicios">Servicios:</label>
+          <div id="serviciosContainer">
+            {% for servicio in servicios %}
+            <div>
+              <input
+                type="checkbox"
+                id="servicio_{{ servicio[0] }}"
+                name="id_servicios[]"
+                value="{{ servicio[0] }}"
+                class="servicio-checkbox"
+              />
+              <label for="servicio_{{ servicio[0] }}"
+                >{{ servicio[1] }} - ${{ servicio[2] }}</label
+              >
+            </div>
+            {% endfor %}
+          </div>
+
+          <button type="button" id="submitButton" onclick="guardarReserva()">
+            Guardar Reserva
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal para ver reservas -->
+    <div id="viewModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('viewModal')">&times;</span>
+        <h3>Lista de Reservas</h3>
+        <div class="table-container">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Salón</th>
+                <th>Servicios</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for reserva in reservas %}
+              <tr>
+                <td>{{ reserva[0] }}</td>
+                <td>{{ reserva[1] }}</td>
+                <td>{{ reserva[2] }}</td>
+                <td>{{ reserva[3] }}</td>
+                <td>{{ reserva[4] }}</td>
+                <td>
+                  <button
+                    class="action-button"
+                    onclick="abrirEditarReservaModal('{{ reserva[0] }}')"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    class="action-button delete-button"
+                    onclick="confirmarEliminar('{{ reserva[0] }}')"
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para editar reserva -->
+    <div id="editarReservaModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('editarReservaModal')"
+          >&times;</span
+        >
+        <h3>Editar Reserva</h3>
+        <form id="editarReservaForm">
+          <label for="editarFechaReserva">Fecha de Reserva:</label>
+          <input
+            type="date"
+            id="editarFechaReserva"
+            name="fecha_reserva"
+            required
+          />
+
+          <label for="editarCliente">Cliente:</label>
+          <select id="editarCliente" name="id_cliente" required>
+            {% for cliente in clientes %}
+            <option value="{{ cliente[0] }}">{{ cliente[1] }}</option>
+            {% endfor %}
+          </select>
+
+          <label for="editarSalon">Salón:</label>
+          <select id="editarSalon" name="id_salon" required>
+            {% for salon in salones %}
+            <option value="{{ salon[0] }}">{{ salon[1] }}</option>
+            {% endfor %}
+          </select>
+
+          <label for="editarServicios">Servicios:</label>
+          <div id="editarServiciosContainer">
+            {% for servicio in servicios %}
+            <div>
+              <input
+                type="checkbox"
+                id="editarServicio_{{ servicio[0] }}"
+                name="id_servicios[]"
+                value="{{ servicio[0] }}"
+              />
+              <label for="editarServicio_{{ servicio[0] }}"
+                >{{ servicio[1] }} - ${{ servicio[2] }}</label
+              >
+            </div>
+            {% endfor %}
+          </div>
+
+          <input type="hidden" id="editarIdReserva" />
+          <button
+            type="button"
+            class="action-button"
+            onclick="guardarEdicionReserva()"
+          >
+            Guardar Cambios
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function openAddModal() {
+        document.getElementById("addModal").style.display = "block";
+      }
+
+      function openViewModal() {
+        document.getElementById("viewModal").style.display = "block";
+      }
+
+      function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+      }
+
+      function buscarCliente() {
+        const cedula = document.getElementById("cedulaCliente").value.trim();
+        const clienteInfo = document.getElementById("clienteInfo");
+        const idClienteInput = document.getElementById("idCliente");
+
+        if (!cedula) {
+          alert("Por favor, ingrese una cédula.");
+          return;
+        }
+
+        fetch("/buscar_cliente", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ cedula }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Cliente no encontrado");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            clienteInfo.textContent = `Cliente: ${data.nombre} (Cédula: ${data.cedula})`;
+            idClienteInput.value = data.id;
+          })
+          .catch((error) => {
+            clienteInfo.textContent = "";
+            idClienteInput.value = "";
+            alert(error.message);
+          });
+      }
+
+      function guardarReserva() {
+        const fechaReserva = document.getElementById("fechaReserva").value;
+        const idCliente = document.getElementById("idCliente").value;
+        const idSalon = document.getElementById("idSalon").value;
+
+        const checkboxes = document.querySelectorAll(".servicio-checkbox");
+        const idServicios = [];
+        checkboxes.forEach((checkbox) => {
+          if (checkbox.checked) {
+            idServicios.push(checkbox.value);
+          }
+        });
+
+        if (!fechaReserva || !idCliente || !idSalon) {
+          alert("Por favor, complete todos los campos obligatorios.");
+          return;
+        }
+
+        const data = {
+          fecha_reserva: fechaReserva,
+          id_cliente: idCliente,
+          id_salon: idSalon,
+          id_servicios: idServicios,
+        };
+
+        fetch("/guardar_reserva", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.success) {
+              alert("Reserva guardada correctamente.");
+              window.location.href = "/reservas";
+            } else {
+              alert("Error al guardar la reserva: " + result.message);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Ocurrió un error al guardar la reserva.");
+          });
+      }
+
+      function abrirEditarReservaModal(idReserva) {
+        fetch(`/obtener_reserva/${idReserva}`)
+          .then((response) => response.json())
+          .then((reserva) => {
+            document.getElementById("editarIdReserva").value = reserva.id;
+            document.getElementById("editarFechaReserva").value =
+              reserva.fecha_reserva;
+            document.getElementById("editarCliente").value = reserva.id_cliente;
+            document.getElementById("editarSalon").value = reserva.id_salon;
+
+            const checkboxes = document.querySelectorAll(
+              "#editarServiciosContainer input[type='checkbox']"
+            );
+            checkboxes.forEach((checkbox) => {
+              checkbox.checked = reserva.id_servicios.includes(
+                parseInt(checkbox.value)
+              );
+            });
+
+            document.getElementById("editarReservaModal").style.display =
+              "block";
+          })
+          .catch((error) => {
+            console.error("Error al obtener la reserva:", error);
+            alert("Ocurrió un error al cargar la reserva.");
+          });
+      }
+
+      function guardarEdicionReserva() {
+        const idReserva = document.getElementById("editarIdReserva").value;
+        const fechaReserva =
+          document.getElementById("editarFechaReserva").value;
+        const idCliente = document.getElementById("editarCliente").value;
+        const idSalon = document.getElementById("editarSalon").value;
+
+        const checkboxes = document.querySelectorAll(
+          "#editarServiciosContainer input[type='checkbox']"
+        );
+        const idServicios = [];
+        checkboxes.forEach((checkbox) => {
+          if (checkbox.checked) {
+            idServicios.push(checkbox.value);
+          }
+        });
+
+        fetch(`/editar_reserva`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id_reserva: idReserva,
+            fecha_reserva: fechaReserva,
+            id_cliente: idCliente,
+            id_salon: idSalon,
+            id_servicios: idServicios,
+          }),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.success) {
+              alert("Reserva actualizada correctamente.");
+              window.location.href = "/reservas";
+            } else {
+              alert("Error al actualizar la reserva: " + result.message);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Ocurrió un error al actualizar la reserva.");
+          });
+      }
+
+      function confirmarEliminar(idReserva) {
+        document.getElementById("reservaAEliminar").value = idReserva;
+        document.getElementById("deleteModal").style.display = "block";
+      }
+
+      function eliminarReserva() {
+        const idReserva = document.getElementById("reservaAEliminar").value;
+
+        fetch("/eliminar_reserva", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id_reserva: idReserva }),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.success) {
+              alert("Reserva eliminada correctamente.");
+              window.location.href = "/reservas";
+            } else {
+              alert("Error al eliminar la reserva: " + result.message);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Ocurrió un error al eliminar la reserva.");
+          });
+      }
+    </script>
+  </body>
+</html>

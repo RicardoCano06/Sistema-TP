@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Facturas - The Grand Hall</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <nav class="navbar">
+        <h2>The Grand Hall</h2>
+        <div class="nav-links">
+          <a
+            href="{% if role == 'Administrador' %}/admin_dashboard{% elif role == 'Empleado' %}/empleado_dashboard{% endif %}"
+            >Inicio</a
+          >
+          <a href="/logout">Cerrar Sesión</a>
+        </div>
+      </nav>
+      <div class="content">
+        <h2>Gestión de Facturas</h2>
+        <div class="gestion-buttons">
+          <button class="action-button" onclick="openAddModal()">
+            Generar Factura
+          </button>
+          <button class="action-button" onclick="openViewModal()">
+            Ver Facturas
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para generar factura -->
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('addModal')">&times;</span>
+        <h3>Generar Factura</h3>
+        <form id="buscar-reservas-form">
+          <label for="ci_ruc">Buscar reservas por CI/RUC del cliente:</label>
+          <input
+            type="text"
+            id="ci_ruc"
+            name="ci_ruc"
+            placeholder="Ingrese el CI/RUC"
+            required
+          />
+          <button type="submit" class="action-button">Buscar</button>
+        </form>
+        <form action="/generar_factura" method="POST">
+          <label for="id_reserva">Reservas disponibles:</label>
+          <select name="id_reserva" id="id_reserva" required>
+            <option value="">Seleccione una reserva</option>
+          </select>
+          <button type="submit" class="action-button">Generar Factura</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal para ver facturas -->
+    <div id="viewModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('viewModal')">&times;</span>
+        <h3>Lista de Facturas</h3>
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Timbrado</th>
+              <th>Fecha</th>
+              <th>Total</th>
+              <th>Cliente</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for factura in facturas %}
+            <tr>
+              <td>{{ factura[0] }}</td>
+              <td>{{ factura[1] }}</td>
+              <td>{{ factura[2] }}</td>
+              <td>{{ factura[3] }}</td>
+              <td>{{ factura[4] }}</td>
+              <td>
+                <button
+                  class="action-button"
+                  onclick="window.location.href='/factura_pdf/{{ factura[0] }}'"
+                >
+                  Descargar PDF
+                </button>
+                <button
+                  class="action-button delete-button"
+                  onclick="confirmarEliminarFactura('{{ factura.0 }}')"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="deleteFacturaModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('deleteFacturaModal')"
+          >&times;</span
+        >
+        <h3>Confirmar Eliminación</h3>
+        <p>¿Estás seguro de que deseas eliminar esta factura?</p>
+        <button
+          class="action-button"
+          id="confirmDeleteFacturaButton"
+          onclick="eliminarFactura()"
+        >
+          Confirmar
+        </button>
+        <button
+          class="action-button"
+          onclick="closeModal('deleteFacturaModal')"
+        >
+          Cancelar
+        </button>
+        <input type="hidden" id="facturaAEliminar" />
+      </div>
+    </div>
+
+    <script>
+      function openAddModal() {
+        document.getElementById("addModal").style.display = "block";
+      }
+
+      function openViewModal() {
+        document.getElementById("viewModal").style.display = "block";
+      }
+
+      function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+      }
+
+      document
+        .getElementById("buscar-reservas-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault(); // Evitar que el formulario recargue la página
+
+          const ciRuc = document.getElementById("ci_ruc").value.trim();
+          const reservasDropdown = document.getElementById("id_reserva");
+
+          // Limpiar el dropdown
+          reservasDropdown.innerHTML =
+            '<option value="">Seleccione una reserva</option>';
+
+          // Realizar la solicitud POST para buscar reservas
+          fetch("/buscar_reservas", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ci_ruc: ciRuc }),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(
+                  "No se encontraron reservas para el CI proporcionado."
+                );
+              }
+              return response.json();
+            })
+            .then((data) => {
+              data.reservas.forEach((reserva) => {
+                const option = document.createElement("option");
+                option.value = reserva[0];
+                option.textContent = `${reserva[1]} - ${reserva[2]} (${reserva[3]})`;
+                reservasDropdown.appendChild(option);
+              });
+            })
+            .catch((error) => {
+              alert(error.message);
+            });
+        });
+      function confirmarEliminarFactura(idFactura) {
+        document.getElementById("facturaAEliminar").value = idFactura;
+        document.getElementById("deleteFacturaModal").style.display = "block";
+      }
+
+      function eliminarFactura() {
+        const idFactura = document.getElementById("facturaAEliminar").value;
+
+        fetch("/eliminar_factura", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id_factura: idFactura }),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.success) {
+              alert("Factura eliminada correctamente.");
+              window.location.href = "/facturas"; // Recargar la página
+            } else {
+              alert("Error al eliminar la factura: " + result.message);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Ocurrió un error al eliminar la factura.");
+          });
+      }
+
+      function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+      }
+      // Cierra el modal si se hace clic fuera de él
+      window.onclick = function (event) {
+        const modals = ["addModal", "viewModal"];
+        modals.forEach((modalId) => {
+          const modal = document.getElementById(modalId);
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        });
+      };
+    </script>
+  </body>
+</html>

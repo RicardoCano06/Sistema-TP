@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Clientes - The Grand Hall</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <nav class="navbar">
+        <h2>The Grand Hall</h2>
+        <div class="nav-links">
+          <a
+            href="{% if role == 'Administrador' %}/admin_dashboard{% elif role == 'Empleado' %}/empleado_dashboard{% endif %}"
+            >Inicio</a
+          >
+          <a href="/logout">Cerrar Sesión</a>
+        </div>
+      </nav>
+      <div class="content">
+        <h2>Gestión de Clientes</h2>
+        <div class="gestion-buttons">
+          <button class="action-button" onclick="openAddModal()">
+            Agregar Cliente
+          </button>
+          <button class="action-button" onclick="openViewModal()">
+            Ver Clientes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para agregar cliente -->
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('addModal')">&times;</span>
+        <h3>Agregar Cliente</h3>
+        <form
+          id="addClienteForm"
+          action="/guardar_cliente"
+          method="POST"
+          onsubmit="return validateAddClienteForm()"
+        >
+          <label for="nombre">Nombre:</label>
+          <input type="text" id="nombre" name="nombre" required />
+
+          <label for="telefono">Teléfono:</label>
+          <input type="text" id="telefono" name="telefono" required />
+
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required />
+
+          <label for="ci_ruc">CI/RUC:</label>
+          <input type="text" id="ci_ruc" name="ci_ruc" required />
+
+          <button type="submit">Agregar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal para editar cliente -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('editModal')">&times;</span>
+        <h3>Editar Cliente</h3>
+        <form
+          id="editClienteForm"
+          action="/editar_cliente"
+          method="POST"
+          onsubmit="return validateEditClienteForm()"
+        >
+          <input type="hidden" id="editClienteId" name="id_cliente" />
+
+          <label for="editNombre">Nombre:</label>
+          <input type="text" id="editNombre" name="nombre" required />
+
+          <label for="editTelefono">Teléfono:</label>
+          <input type="text" id="editTelefono" name="telefono" required />
+
+          <label for="editEmail">Email:</label>
+          <input type="email" id="editEmail" name="email" required />
+
+          <label for="editCiRuc">CI/RUC:</label>
+          <input type="text" id="editCiRuc" name="ci_ruc" required />
+
+          <button type="submit">Guardar Cambios</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal para eliminar cliente -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('deleteModal')">&times;</span>
+        <h3>Eliminar Cliente</h3>
+        <form id="deleteClienteForm" action="/eliminar_cliente" method="POST">
+          <input type="hidden" id="deleteClienteId" name="id_cliente" />
+          <p>¿Estás seguro de que deseas eliminar este cliente?</p>
+          <button type="submit">Eliminar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal para ver clientes -->
+    <div id="viewModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('viewModal')">&times;</span>
+        <h3>Lista de Clientes</h3>
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Email</th>
+              <th>CI/RUC</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cliente in clientes %}
+            <tr>
+              <td>{{ cliente[0] }}</td>
+              <td>{{ cliente[1] }}</td>
+              <td>{{ cliente[2] }}</td>
+              <td>{{ cliente[3] }}</td>
+              <td>{{ cliente[4] }}</td>
+              <td>
+                <button
+                  class="edit-button"
+                  onclick="openEditModal('{{ cliente[0] }}', '{{ cliente[1] }}', '{{ cliente[2] }}', '{{ cliente[3] }}', '{{ cliente[4] }}')"
+                >
+                  Editar
+                </button>
+                <button
+                  class="delete-button"
+                  onclick="openDeleteModal('{{ cliente[0] }}')"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- JavaScript para manejar los modales y validaciones -->
+    <script>
+      // Abrir el modal para agregar cliente
+      function openAddModal() {
+        document.getElementById("addModal").style.display = "block";
+      }
+
+      // Abrir el modal para ver clientes
+      function openViewModal() {
+        document.getElementById("viewModal").style.display = "block";
+      }
+
+      // Abrir el modal para editar cliente
+      function openEditModal(id, nombre, telefono, email, ci_ruc) {
+        // Cerrar el modal de Ver Clientes si está abierto
+        const viewModal = document.getElementById("viewModal");
+        if (viewModal && viewModal.style.display === "block") {
+          viewModal.style.display = "none"; // Cierra el modal de Ver Clientes
+        }
+
+        // Abrir el modal de Editar Cliente
+        const editModal = document.getElementById("editModal");
+        if (editModal) {
+          document.getElementById("editClienteId").value = id;
+          document.getElementById("editNombre").value = nombre;
+          document.getElementById("editTelefono").value = telefono;
+          document.getElementById("editEmail").value = email;
+          document.getElementById("editCiRuc").value = ci_ruc;
+          editModal.style.display = "block"; // Abre el modal de Editar Cliente
+        } else {
+          console.error("No se encontró el modal de Editar Cliente.");
+        }
+      }
+
+      // Abrir el modal para eliminar cliente
+      function openDeleteModal(id) {
+        // Cerrar el modal de Ver Clientes si está abierto
+        const viewModal = document.getElementById("viewModal");
+        if (viewModal && viewModal.style.display === "block") {
+          viewModal.style.display = "none"; // Cierra el modal de Ver Clientes
+        }
+
+        // Abrir el modal de Eliminar Cliente
+        document.getElementById("deleteClienteId").value = id;
+        document.getElementById("deleteModal").style.display = "block";
+      }
+
+      // Cerrar modales y limpiar campos
+      function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.style.display = "none";
+      }
+
+      // Validar formulario de agregar cliente
+      function validateAddClienteForm() {
+        const nombre = document.getElementById("nombre").value.trim();
+        const telefono = document.getElementById("telefono").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const ciRuc = document.getElementById("ci_ruc").value.trim();
+
+        if (!nombre) {
+          alert("El nombre es obligatorio.");
+          return false;
+        }
+
+        if (!/^\d+$/.test(telefono)) {
+          alert("El teléfono debe contener solo números.");
+          return false;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          alert("El correo electrónico no es válido.");
+          return false;
+        }
+
+        if (!ciRuc) {
+          alert("El CI/RUC es obligatorio.");
+          return false;
+        }
+
+        return true; // Permitir el envío del formulario
+      }
+
+      // Validar formulario de editar cliente
+      function validateEditClienteForm() {
+        const nombre = document.getElementById("editNombre").value.trim();
+        const telefono = document.getElementById("editTelefono").value.trim();
+        const email = document.getElementById("editEmail").value.trim();
+        const ciRuc = document.getElementById("editCiRuc").value.trim();
+
+        if (!nombre) {
+          alert("El nombre es obligatorio.");
+          return false;
+        }
+
+        if (!/^\d+$/.test(telefono)) {
+          alert("El teléfono debe contener solo números.");
+          return false;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          alert("El correo electrónico no es válido.");
+          return false;
+        }
+
+        if (!ciRuc) {
+          alert("El CI/RUC es obligatorio.");
+          return false;
+        }
+
+        return true; // Permitir el envío del formulario
+      }
+      // Mostrar mensajes de éxito o error
+      window.onload = function () {
+        const successMessage =
+          "{{ success_message | default('', true) | safe }}";
+        const errorMessage = "{{ error_message | default('', true) | safe }}";
+
+        if (successMessage) {
+          alert(successMessage); // Mostrar mensaje de éxito
+        }
+
+        if (errorMessage) {
+          alert(errorMessage); // Mostrar mensaje de error
+        }
+      };
+    </script>
+  </body>
+</html>

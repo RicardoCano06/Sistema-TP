@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio de Sesión - The Grand Hall</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="login-wrapper">
+        <!-- Sección del logo -->
+        <div class="login-logo">
+            <img src="/static/images/logothegrandhall.jpg" alt="Logo The Grand Hall">
+        </div>
+
+        <!-- Sección del formulario -->
+        <div class="login-form-container">
+            <h2>Inicio de Sesión</h2>
+            <form action="/login" method="POST">
+                <label for="usuario">Usuario:</label>
+                <input type="text" id="usuario" name="usuario" required>
+                
+                <label for="clave">Contraseña:</label>
+                <input type="password" id="clave" name="clave" required>
+                
+                <label for="rol">Ingresar como:</label>
+                <select id="rol" name="rol" required>
+                    <option value="">Seleccione un rol</option>
+                    <option value="Administrador">Administrador</option>
+                    <option value="Empleado">Empleado</option>
+                </select>
+                
+                <button type="submit">Iniciar Sesión</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

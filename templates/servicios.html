@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Servicios - The Grand Hall</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h2>The Grand Hall</h2>
+            <div class="nav-links">
+                <a href="{% if role == 'Administrador' %}/admin_dashboard{% elif role == 'Empleado' %}/empleado_dashboard{% endif %}">Inicio</a>
+                <a href="/logout">Cerrar Sesión</a>
+            </div>
+        </nav>
+        <div class="content">
+            <h2>Gestión de Servicios</h2>
+            <div class="gestion-buttons">
+                <button class="action-button" onclick="openAddModal()">Agregar Servicio</button>
+                <button class="action-button" onclick="openViewModal()">Ver Servicios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar servicio -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addModal')">&times;</span>
+            <h3>Agregar Servicio</h3>
+            <form action="/guardar_servicio" method="POST">
+                <label for="nombreServicio">Nombre del Servicio:</label>
+                <input type="text" id="nombreServicio" name="nombre" required>
+                <label for="precioServicio">Precio:</label>
+                <input type="number" step="0.01" id="precioServicio" name="precio" required>
+                <button type="submit">Agregar Servicio</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver servicios -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('viewModal')">&times;</span>
+            <h3>Lista de Servicios</h3>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Precio</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for servicio in servicios %}
+                    <tr>
+                        <td>{{ servicio[0] }}</td>
+                        <td>{{ servicio[1] }}</td>
+                        <td>{{ servicio[2] }}</td>
+                        <td>
+                            <button class="edit-button" onclick="openEditModal('{{ servicio[0] }}', '{{ servicio[1] }}', '{{ servicio[2] }}')">Editar</button>
+                            <button class="delete-button" onclick="openDeleteModal('{{ servicio[0] }}')">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal para editar servicio -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editModal')">&times;</span>
+            <h3>Editar Servicio</h3>
+            <form action="/editar_servicio" method="POST">
+                <input type="hidden" id="editIdServicio" name="id_servicio">
+                <label for="editNombreServicio">Nombre del Servicio:</label>
+                <input type="text" id="editNombreServicio" name="nombre" required>
+                <label for="editPrecioServicio">Precio:</label>
+                <input type="number" step="0.01" id="editPrecioServicio" name="precio" required>
+                <button type="submit">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para eliminar servicio -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('deleteModal')">&times;</span>
+            <h3>Eliminar Servicio</h3>
+            <form action="/eliminar_servicio" method="POST">
+                <input type="hidden" id="deleteIdServicio" name="id_servicio">
+                <p>¿Estás seguro de que deseas eliminar este servicio?</p>
+                <button type="submit">Eliminar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'block';
+        }
+
+        function openViewModal() {
+            document.getElementById('viewModal').style.display = 'block';
+        }
+
+        function openEditModal(id, nombre, precio) {
+            document.getElementById('editIdServicio').value = id;
+            document.getElementById('editNombreServicio').value = nombre;
+            document.getElementById('editPrecioServicio').value = precio;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function openDeleteModal(id) {
+            document.getElementById('deleteIdServicio').value = id;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Cierra el modal si se hace clic fuera de él
+        window.onclick = function(event) {
+            const modals = ['addModal', 'viewModal', 'editModal', 'deleteModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
